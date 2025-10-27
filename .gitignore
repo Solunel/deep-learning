@@ -1,5 +1,5 @@
 data/
 my_models/
-.csv
+*.csv
 .idea/
-.ipynb
+*.ipynb
