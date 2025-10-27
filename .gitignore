@@ -3,3 +3,6 @@ my_models/
 *.csv
 .idea/
 *.ipynb
+checkpoints/
+*.yaml
+logs/

@@ -154,7 +154,7 @@ def train(net, train_data, dev_data, device):
         if dev_mse < min_mse:
             min_mse = dev_mse
             print(f"Epoch {epoch}: Saving model with lower dev loss: {min_mse:.4f}")
-            torch.save(net.state_dict(), '../my_models/hw1/model.pth')
+            torch.save(net.state_dict(), '../checkpoints/hw1/model.pth')
             early_stop_count = 0
         else:
             early_stop_count += 1
@@ -229,7 +229,7 @@ if __name__ == '__main__':
     # 2. 设置目录和路径
     train_path = '../data/hw1/covid.train.csv'
     test_path = '../data/hw1/covid.test.csv'
-    model_dir = "../my_models/hw1"
+    model_dir = "../checkpoints/hw1"
     os.makedirs(model_dir, exist_ok=True)
 
     # 3. 为标准化计算均值和标准差 (!!! 关键修改 !!!)

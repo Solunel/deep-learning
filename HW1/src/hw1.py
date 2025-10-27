@@ -131,7 +131,7 @@ def train(net, train_data, dev_data):
         if dev_mes < min_mse:
             min_mse = dev_mes
             print(f"保存网络  轮数：{epoch}  损失：{min_mse}")
-            torch.save(net.state_dict(), '../my_models/hw1/model.pth')
+            torch.save(net.state_dict(), '../checkpoints/hw1/model.pth')
             break_flag = 0
         else:
             break_flag += 1
@@ -189,7 +189,7 @@ def save_pred(preds, file):
             writer.writerow([i, p])
 
 # 设置存储模型的目录
-os.makedirs("../my_models/hw1", exist_ok=True)
+os.makedirs("../checkpoints/hw1", exist_ok=True)
 
 # 加载数据
 train_data = prep_dataloader('../data/hw1/covid.train.csv', 'train', batch_size=135)
@@ -204,7 +204,7 @@ del net
 
 # 加载最好的模型进行预测
 net = Net(train_data.dataset.dim)
-best_net = torch.load('../my_models/hw1/model.pth', map_location="cpu")
+best_net = torch.load('../checkpoints/hw1/model.pth', map_location="cpu")
 net.load_state_dict(best_net)
 
 plot_pred(dev_data, net, 'cpu')

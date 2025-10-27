@@ -1,56 +1,64 @@
 """
 utils.py
-这里存放所有通用辅助函数，并设置我们的日志系统。
+这里存放所有不依赖于项目具体逻辑的通用辅助函数。
 """
-
 import logging
 import csv
-import matplotlib.pyplot as plt
+import os
+import yaml
 
-def setup_logger():
-    """配置并返回一个日志记录器实例。"""
+# 获取一个以当前模块名 (__name__ 即 "utils") 命名的 logger 实例。
+# 这是 logging 模块的最佳实践，可以方便地追踪日志来源。
+logger = logging.getLogger(__name__)
+
+def load_config(path="config.yaml"):
+    """
+    加载并解析 YAML 格式的配置文件。
+    :param path: 配置文件的路径。
+    :return: 解析后的配置字典。
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        # 使用 yaml.safe_load 可以安全地加载 YAML 文件，防止执行恶意代码。
+        return yaml.safe_load(f)
+
+def setup_logging():
+    """
+    配置全局的日志记录器 (Logger)。
+    这个函数应该在项目入口 (train.py/predict.py) 的最开始被调用一次。
+    """
     logging.basicConfig(
-        level=logging.INFO,# 设置日志级别为 INFO，表示 INFO, WARNING, ERROR 级别的日志都会被记录。
-        # 设置日志输出的格式。
-        # %(asctime)s: 日志记录的时间
-        # %(levelname)s: 日志级别（如 INFO, ERROR）
-        # %(message)s: 具体的日志信息
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'# 设置时间的显示格式。
+        # 设置日志级别为 INFO，意味着只有 INFO, WARNING, ERROR, CRITICAL 级别的日志会被记录。
+        level=logging.INFO,
+        # 设置日志输出格式：时间 - 级别 - [模块名] - 日志消息
+        format='%(asctime)s - %(levelname)s - [%(name)s] - %(message)s',
+        # 设置时间的显示格式。
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
-    # 获取并返回一个名为 __name__ 的 logger 实例。
-    # __name__ 会被替换为当前模块的名字（在这里是 'utils'）。
-    return logging.getLogger(__name__)
 
-# 定义一个函数来绘制学习曲线（损失和准确率随 epoch 的变化）。
-def plot_learning_curves(history, title=''):
-    # 使用 matplotlib 创建一个包含 1 行 2 列子图的图窗。figsize 控制整个图窗的大小。
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-    # 创建一个 x 轴的序列，代表 epoch 的编号
-    epochs = range(1, len(history['train_loss']) + 1)
-
-    # --- 在第一个子图 (ax1) 上绘制损失曲线 ---
-    ax1.plot(epochs, history['train_loss'], c='tab:red', label='Train Loss')# 绘制训练损失，'tab:red' 是颜色名
-    ax1.plot(epochs, history['dev_loss'], c='tab:cyan', label='Dev Loss')# 绘制验证损失。
-    ax1.set_title(f'Loss Curve of {title}')# 设置子图标题。
-    ax1.legend()# 显示图例。
-    ax1.grid(True)# 显示网格线。
-
-    # --- 在第二个子图 (ax2) 上绘制准确率曲线 ---
-    ax2.plot(epochs, history['train_acc'], c='tab:red', label='Train Accuracy')
-    ax2.plot(epochs, history['dev_acc'], c='tab:cyan', label='Dev Accuracy')
-    ax2.set_title(f'Accuracy Curve of {title}')
-    ax2.legend()
-    ax2.grid(True)
-
-    plt.tight_layout()# 自动调整子图布局，防止重叠。
-    plt.show()# 显示最终的图窗。
-
+def initialize_environment(config):
+    """
+    根据配置初始化项目环境，例如创建必要的文件夹。
+    :param config: 项目配置字典。
+    """
+    # 使用本模块自己的 logger 记录信息。
+    logger.info(f"模型检查点将被保存到: {config['paths']['model_dir']}")
+    # exist_ok=True 表示如果文件夹已存在，则不会抛出错误。
+    os.makedirs(config['paths']['model_dir'], exist_ok=True)
+    os.makedirs(config['paths']['log_dir'], exist_ok=True) # 确保 TensorBoard 日志目录也存在
 
 def save_pred(preds, file):
-    """将预测数组保存到指定的 CSV 文件中。"""
+    """
+    将预测结果数组保存到指定的 CSV 文件中。
+    :param preds: 包含所有预测标签的 NumPy 数组。
+    :param file: 要保存的 CSV 文件路径。
+    """
+    logger.info(f"正在保存预测结果到 {file}...")
+    # 使用 with 语句确保文件操作结束后能被正确关闭。
     with open(file, 'w', newline='') as fp:
-        writer = csv.writer(fp)# 创建一个 csv.writer 对象，用于向文件中写入数据。
-        writer.writerow(['Id', 'Class'])# 写入 CSV 文件的表头。
-        for i, p in enumerate(preds): # 使用 enumerate 遍历预测结果数组，它会同时返回索引 i 和值 p。
-            writer.writerow([i, p])# 将每一条预测结果（Id 和 Class）写入新的一行。
+        # 创建一个 csv writer 对象。
+        writer = csv.writer(fp)
+        # 写入 CSV 文件的表头。
+        writer.writerow(['Id', 'Class'])
+        # 使用 enumerate 同时获取索引和值，写入每一行数据。
+        for i, p in enumerate(preds):
+            writer.writerow([i, p])
