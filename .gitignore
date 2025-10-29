@@ -4,5 +4,4 @@ my_models/
 .idea/
 *.ipynb
 checkpoints/
-*.yaml
 logs/

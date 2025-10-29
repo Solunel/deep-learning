@@ -1,0 +1,16 @@
+# config.yaml
+# 项目配置文件
+
+paths:
+  data_root: '../data/'
+  model_dir: '../checkpoints/'
+  prediction_file: '../prediction.csv'
+  log_dir: '../logs/'
+
+hparams: # hparams 是 hyperparameters 的常用缩写
+  batch_size: 128
+  learning_rate: 0.001
+  num_epochs: 5
+  num_workers: 3
+  enable_early_stopping: true
+  patience: 5

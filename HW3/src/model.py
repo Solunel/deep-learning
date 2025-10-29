@@ -1,75 +1,37 @@
-# model.py
+from torch import nn
+from torch.nn import Flatten
 
-# 导入PyTorch的神经网络模块，我们用nn来简化引用。
-import torch.nn as nn
 
-# 定义我们自己的分类器模型。它必须继承自 PyTorch 的 nn.Module 类。
-# 这就像告诉PyTorch：“嘿，这是一个模型，请用你的方式来管理它（比如跟踪参数、移动到GPU等）”。
-class Classifier(nn.Module):
-    # `__init__` 是类的构造函数。当创建模型实例时（如`model = Classifier()`），这里的代码会被执行。
-    # 我们在这里定义模型需要的所有“零件”（也就是神经网络的层）。
+class Net(nn.Module):
     def __init__(self):
-        # 这一行是必须的，它调用了父类(nn.Module)的构造函数，完成一些必要的初始化工作。
-        super(Classifier, self).__init__()
-
-        # 定义卷积层部分。`nn.Sequential` 是一个容器，可以把多个层按顺序打包成一个模块。
-        # 数据会像在流水线上一样，依次通过这里面的所有层。
-        self.cnn_layers = nn.Sequential(
-            # 第1个卷积块
-            # nn.Conv2d: 2D卷积层，是提取图像特征的核心。
-            # 参数: 输入通道数=3(彩色图片的R,G,B), 输出通道数=64(我们希望提取64种特征), 卷积核大小=3x3, 步长=1, 填充=1。
+        super(Net, self).__init__()
+        self.cnn_net = nn.Sequential(
             nn.Conv2d(3, 64, 3, 1, 1),
-            # nn.BatchNorm2d: 批归一化。它能加速模型训练，提高稳定性。对刚才输出的64个通道进行归一化。
             nn.BatchNorm2d(64),
-            # nn.ReLU: ReLU激活函数。它为网络引入了非线性能力，使得模型可以学习更复杂的模式。
             nn.ReLU(),
-            # nn.MaxPool2d: 最大池化层。它能减小特征图的尺寸（这里是减半），减少计算量，并使特征对位置不那么敏感。
-            nn.MaxPool2d(2, 2, 0),
+            nn.MaxPool2d(2, 2),
 
-            # 第2个卷积块 (类似地，加深网络，提取更复杂的特征)
-            nn.Conv2d(64, 128, 3, 1, 1), # 输入通道数必须和上一层的输出通道数一致(64)
+            nn.Conv2d(64, 128, 3, 1, 1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0),
+            nn.MaxPool2d(2, 2),
 
-            # 第3个卷积块
             nn.Conv2d(128, 256, 3, 1, 1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
-            nn.MaxPool2d(4, 4, 0),
+            nn.MaxPool2d(4, 4)
         )
-
-        # 定义全连接层部分，用于根据提取到的特征进行分类。
-        self.fc_layers = nn.Sequential(
-            # nn.Linear: 全连接层。
-            # 输入维度是 256 * 8 * 8。这是因为：
-            # 初始图片128x128 -> MaxPool(2,2) -> 64x64 -> MaxPool(2,2) -> 32x32 -> MaxPool(4,4) -> 8x8。
-            # CNN最后的输出通道数是256，所以特征图是 [256, 8, 8]。把它拉平就成了 256*8*8=16384 个值。
-            # 输出维度是256，这是一个中间特征。
+        self.flatten = nn.Flatten()
+        self.fc_net = nn.Sequential(
             nn.Linear(256 * 8 * 8, 256),
             nn.ReLU(),
-            nn.Linear(256, 256), # 再经过一个全连接层
+            nn.Linear(256, 256),
             nn.ReLU(),
-            # 最后一个全连接层。输出维度是11，因为这个项目假设要将食物分为11个类别。
-            # 这一层的输出就是模型对每个类别的打分（logits）。
             nn.Linear(256, 11)
         )
 
-    # `forward` 函数定义了数据在模型中是如何“向前传播”的。
-    # 当我们调用 `model(input_data)` 时，实际上就是调用了这个 `forward` 函数。
     def forward(self, x):
-        # x 是输入的批次数据，它的初始尺寸是: [批次大小, 3, 128, 128]
-
-        # 1. 首先让数据通过我们定义的CNN层。
-        # 输出尺寸会变为: [批次大小, 256, 8, 8]
-        x = self.cnn_layers(x)
-
-        # 2. 将输出的立体特征图“拍扁”成一个一维向量。
-        # x.flatten(1) 的意思是保持第0维（批次大小）不变，把后面的维度全部拉平成一维。
-        # 尺寸变为: [批次大小, 16384]
-        x = x.flatten(1)
-
-        # 3. 让拍扁后的向量通过全连接层。
-        # 最终输出尺寸: [批次大小, 11]。每一行代表一张图片，11个值是它属于11个类别的得分。
-        x = self.fc_layers(x)
+        x = self.cnn_net(x)
+        x = self.flatten(x)
+        x = self.fc_net(x)
         return x
