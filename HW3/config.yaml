@@ -14,3 +14,7 @@ hparams: # hparams 是 hyperparameters 的常用缩写
   num_workers: 3
   enable_early_stopping: true
   patience: 5
+
+  # --- 新增半监督学习的配置 （暂未实现）---
+do_semi_supervised: true  # 设置为 true 来开启
+pseudo_label_threshold: 0.85 # 伪标签的置信度阈值

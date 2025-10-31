@@ -1,0 +1,58 @@
+# config.yaml
+
+# ===================================================================
+# 路径配置 (paths)
+# -------------------------------------------------------------------
+# 这里定义了项目中所有需要用到的文件和文件夹路径。
+# ===================================================================
+paths:
+  data_root: "../data"
+  model_dir: "../checkpoints"
+  log_dir: "../logs"
+  output_path: "../prediction.csv"
+
+model_params:
+  # d_model: 这是 Transformer 模型内部的主要工作维度。
+  # 输入的梅尔频谱图特征维度是40，模型会先把它映射到 d_model 维（例如80维）进行各种复杂的计算。
+  # 这是一个核心超参数，通常 d_model 越大，模型的表达能力越强，但也更容易过拟合。
+  d_model: 80
+
+  # nhead: 多头注意力机制（Multi-Head Attention）中的“头”数。
+  # Transformer 不会只从一个角度去分析序列信息，而是会从 nhead 个不同角度并行分析，然后将结果综合起来。
+  # 这大大增强了模型捕捉不同方面特征的能力。注意：d_model 必须能被 nhead 整除。
+  nhead: 4
+
+  # num_layers: Transformer Encoder 的层数。
+  # 模型会将多个 Transformer Encoder Layer 堆叠起来，形成一个更深的网络。
+  # 底层网络可能学习到音素等局部特征，高层网络则能基于底层输出学习到更全局、更抽象的特征。
+  num_layers: 4
+
+  # dim_feedforward: 在每个 Transformer Encoder Layer 内部，都有一个前馈神经网络（Feed-Forward Network）。
+  # 这个参数定义了这个前馈神经网络隐藏层的大小。通常会设为 d_model 的2倍或4倍。
+  dim_feedforward: 256
+
+
+hparams:
+  batch_size: 8
+  num_workers: 8
+  learning_rate: 0.001
+
+  # total_steps: 总训练步数。这是“Step-based”训练模式的核心。
+  # 整个训练过程会在处理完这么多个批次的数据后结束，与数据集被遍历了多少遍（Epoch）没有直接关系。
+  # 这种方式更适合大规模数据集和现代学习率调度策略。
+  total_steps: 1000                 # 注意：这是一个用于快速测试的小数值。
+
+  # warmup_steps: 学习率预热步数。在训练的最初阶段（前 warmup_steps 步），
+  # 学习率会从一个很小的值线性增长到设定的 learning_rate。
+  # 这样做可以帮助模型在训练初期更稳定，避免因参数随机初始化而导致的梯度爆炸。
+  warmup_steps: 100                 # 注意：这是一个用于快速测试的小数值。
+
+  # valid_steps: 验证步数间隔。每训练 valid_steps 个批次，
+  # 程序就会暂停训练，在验证集上评估一次模型的性能，并保存检查点。
+  # 这让我们能及时监控模型表现，并保留下表现最好的那个模型。
+  valid_steps: 200                  # 注意：这是一个用于快速测试的小数值。
+
+  enable_early_stopping: true
+  patience: 5
+
+  segment_len: 128
